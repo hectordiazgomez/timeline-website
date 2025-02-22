@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import BirthdayScreen from './calendar';
-import MonthScreen from './MonthScreen';
 import {
     Calendar as CalendarIcon,
     Loader,
@@ -21,28 +20,22 @@ const COLOR_SWATCHES = [
 ];
 
 const Home = () => {
-    const [view, setView] = useState('home');
+    const [view, setView] = useState('home'); 
     const [birthDate, setBirthDate] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [zoomLevel, setZoomLevel] = useState('90y');
-    const [timelineData, setTimelineData] = useState([]);
-    const [selectedSquares, setSelectedSquares] = useState([]);
-    // For month screen – we save the current timeline square being drilled into
-    const [currentSquare, setCurrentSquare] = useState(null);
+    const [zoomLevel, setZoomLevel] = useState('90y'); 
+    const [timelineData, setTimelineData] = useState([]); 
+    const [selectedSquares, setSelectedSquares] = useState([]); 
+    const [labelModalOpen, setLabelModalOpen] = useState(false);
+    const [labelText, setLabelText] = useState('');
+    const [labelColor, setLabelColor] = useState(COLOR_SWATCHES[0].value);
 
     useEffect(() => {
         if (timelineData.length === 0) {
-            // Initialize 1080 squares. Each square now may include an optional "months" array.
             const squares = Array.from({ length: 1080 }, (_, idx) => ({
                 id: idx,
                 label: '',
                 color: '',
-                // months will be an array of 12 objects (one for each month)
-                months: Array.from({ length: 12 }, () => ({
-                    label: '',
-                    color: '',
-                    activities: [],
-                })),
             }));
             setTimelineData(squares);
         }
@@ -56,6 +49,7 @@ const Home = () => {
 
     const handleDateConfirm = () => {
         if (!birthDate) return;
+        // Simulate loading...
         setIsLoading(true);
         setTimeout(() => {
             setIsLoading(false);
@@ -63,24 +57,47 @@ const Home = () => {
         }, 1000);
     };
 
-    // Instead of opening a modal immediately, clicking a square moves to the MonthScreen.
-    const handleTimelineSquareClick = (squareId) => {
-        const square = timelineData.find(s => s.id === squareId);
-        if (!square) return;
-        setCurrentSquare(square);
-        setView('month-picker');
+    const handleSquareClick = (squareId) => {
+        if (Array.isArray(squareId)) {
+            // Handle multi-select from touch events
+            setSelectedSquares(squareId);
+        } else {
+            // Handle single click
+            setSelectedSquares((prev) => {
+                if (prev.includes(squareId)) {
+                    return prev.filter((id) => id !== squareId);
+                }
+                return [...prev, squareId];
+            });
+        }
     };
 
-    // Update the timelineData for a given square once the month label(s) are set.
-    const updateSquareMonths = (updatedMonths) => {
-        setTimelineData(prev =>
-            prev.map((square) =>
-                square.id === currentSquare.id ? { ...square, months: updatedMonths } : square
-            )
-        );
-        // Return to timeline view.
-        setCurrentSquare(null);
-        setView('timeline');
+    const openLabelModal = () => {
+        if (selectedSquares.length === 0) return;
+        setLabelModalOpen(true);
+    };
+
+    const closeLabelModal = () => {
+        setLabelText('');
+        setLabelColor(COLOR_SWATCHES[0].value);
+        setLabelModalOpen(false);
+        setSelectedSquares([]);
+    };
+
+    const saveLabel = () => {
+        // Update timeline data with new label/color
+        const updated = timelineData.map((square) => {
+            if (selectedSquares.includes(square.id)) {
+                return {
+                    ...square,
+                    label: labelText,
+                    color: labelColor,
+                };
+            }
+            return square;
+        });
+        setTimelineData(updated);
+        closeLabelModal();
     };
 
     const handleZoomIn = () => {
@@ -127,20 +144,10 @@ const Home = () => {
         );
     }
 
-    if (view === 'month-picker' && currentSquare !== null) {
-        return (
-            <MonthScreen
-                square={currentSquare}
-                updateSquareMonths={updateSquareMonths}
-                colorSwatches={COLOR_SWATCHES}
-            />
-        );
-    }
-
     if (view === 'timeline') {
         return (
             <div className="h-screen bg-black text-white flex flex-col">
-                {/* Header */}
+                {/* Header - Fixed height */}
                 <div className="flex-none flex items-center justify-between p-4 border-b border-gray-700">
                     <h2 className="text-lg font-semibold">Timeline (90 years)</h2>
                     <div className="flex gap-4">
@@ -165,54 +172,151 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Main content */}
+                {/* Main content - Scrollable */}
                 <div className="flex-1 relative">
                     <div className="absolute inset-0 overflow-auto p-4">
                         <TimelineGrid
                             timelineData={timelineData}
                             zoomLevel={zoomLevel}
-                            onSquareClick={handleTimelineSquareClick}
+                            onSquareClick={handleSquareClick}
+                            selectedSquares={selectedSquares}
                         />
                     </div>
                 </div>
 
-                {/* Footer */}
+                {/* Footer - Fixed height */}
                 <div className="flex-none p-4 border-t border-gray-700 flex justify-end">
-                    {/* Optionally keep other timeline actions here */}
                     <button
-                        onClick={handleShare}
-                        className="flex items-center bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition"
+                        onClick={openLabelModal}
+                        className="flex items-center bg-white px-4 py-2 rounded text-black transition"
                     >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        <span>Share Timeline</span>
+                        <Plus className="w-4 h-4 mr-2" />
+                        <span>Add Label</span>
                     </button>
                 </div>
+
+                {/* Label Modal */}
+                {labelModalOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                        <div className="bg-gray-800 p-6 rounded shadow-lg w-80 relative">
+                            <button
+                                onClick={closeLabelModal}
+                                className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                            <h3 className="text-lg mb-4">Add Label</h3>
+                            <input
+                                type="text"
+                                placeholder="Label text"
+                                value={labelText}
+                                onChange={(e) => setLabelText(e.target.value)}
+                                className="w-full mb-4 bg-gray-700 p-2 rounded outline-none"
+                            />
+                            <div className="mb-4">
+                                <p className="mb-2 text-sm text-gray-300">Pick a color:</p>
+                                <div className="flex gap-2">
+                                    {COLOR_SWATCHES.map((swatch) => (
+                                        <button
+                                            key={swatch.name}
+                                            onClick={() => setLabelColor(swatch.value)}
+                                            className={`w-6 h-6 rounded-full border-2 ${labelColor === swatch.value
+                                                    ? 'border-white'
+                                                    : 'border-transparent'
+                                                } ${swatch.value}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    onClick={closeLabelModal}
+                                    className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition flex items-center"
+                                >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={saveLabel}
+                                    className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 transition flex items-center"
+                                >
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
 
     return null;
-};
+}
 
-function TimelineGrid({ timelineData, zoomLevel, onSquareClick }) {
-    let squaresPerRow = 10;
+
+function TimelineGrid({ timelineData, zoomLevel, onSquareClick, selectedSquares }) {
+    const [touchStartPoint, setTouchStartPoint] = useState(null);
+    const [touchEndPoint, setTouchEndPoint] = useState(null);
+
+    let squaresPerRow = 10; // Fixed at 10 squares per row for 80 total squares (8 rows)
+
+    const handleTouchStart = (e) => {
+        const touch = e.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const squareId = element?.getAttribute('data-square-id');
+        if (squareId) {
+            setTouchStartPoint(parseInt(squareId));
+            setTouchEndPoint(parseInt(squareId));
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        e.preventDefault(); // Prevent scrolling while selecting
+        const touch = e.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const squareId = element?.getAttribute('data-square-id');
+        if (squareId) {
+            setTouchEndPoint(parseInt(squareId));
+            // Select all squares between start and end points
+            if (touchStartPoint !== null) {
+                const start = Math.min(touchStartPoint, parseInt(squareId));
+                const end = Math.max(touchStartPoint, parseInt(squareId));
+                const selectedIds = Array.from(
+                    { length: end - start + 1 },
+                    (_, i) => start + i
+                );
+                onSquareClick(selectedIds);
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setTouchStartPoint(null);
+        setTouchEndPoint(null);
+    };
+
     return (
         <div
             className="grid gap-1"
             style={{
                 gridTemplateColumns: `repeat(${squaresPerRow}, minmax(0, 1fr))`,
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
         >
             {timelineData.slice(0, 80).map((square) => {
-                // Render each square. (A square may be colored or not.)
+                const isSelected = selectedSquares.includes(square.id);
                 return (
                     <div
                         key={square.id}
                         data-square-id={square.id}
-                        onClick={() => onSquareClick(square.id)}
                         className={`w-8 h-8 md:w-10 md:h-10 border border-gray-700 cursor-pointer
-              ${square.color}
-            `}
+                            ${square.color} 
+                            ${isSelected ? 'border-white' : ''}
+                            ${touchStartPoint !== null ? 'touch-none' : 'touch-auto'}
+                        `}
                         title={square.label ? square.label : `Square #${square.id}`}
                     />
                 );
