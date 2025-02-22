@@ -146,8 +146,9 @@ const Home = () => {
 
     if (view === 'timeline') {
         return (
-            <div className="min-h-screen bg-black text-white flex flex-col">
-                <div className="flex items-center justify-between p-4 border-b border-gray-700">
+            <div className="h-screen bg-black text-white flex flex-col">
+                {/* Header - Fixed height */}
+                <div className="flex-none flex items-center justify-between p-4 border-b border-gray-700">
                     <h2 className="text-lg font-semibold">Timeline (90 years)</h2>
                     <div className="flex gap-4">
                         <button
@@ -171,18 +172,20 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Grid Container */}
-                <div className="flex-1 overflow-auto p-4">
-                    <TimelineGrid
-                        timelineData={timelineData}
-                        zoomLevel={zoomLevel}
-                        onSquareClick={handleSquareClick}
-                        selectedSquares={selectedSquares}
-                    />
+                {/* Main content - Scrollable */}
+                <div className="flex-1 relative">
+                    <div className="absolute inset-0 overflow-auto p-4">
+                        <TimelineGrid
+                            timelineData={timelineData}
+                            zoomLevel={zoomLevel}
+                            onSquareClick={handleSquareClick}
+                            selectedSquares={selectedSquares}
+                        />
+                    </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div className="p-4 border-t border-gray-700 flex justify-end">
+                {/* Footer - Fixed height */}
+                <div className="flex-none p-4 border-t border-gray-700 flex justify-end">
                     <button
                         onClick={openLabelModal}
                         className="flex items-center bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition"
