@@ -58,13 +58,18 @@ const Home = () => {
     };
 
     const handleSquareClick = (squareId) => {
-        // Toggle selection of a square (allow multi-select)
-        setSelectedSquares((prev) => {
-            if (prev.includes(squareId)) {
-                return prev.filter((id) => id !== squareId);
-            }
-            return [...prev, squareId];
-        });
+        if (Array.isArray(squareId)) {
+            // Handle multi-select from touch events
+            setSelectedSquares(squareId);
+        } else {
+            // Handle single click
+            setSelectedSquares((prev) => {
+                if (prev.includes(squareId)) {
+                    return prev.filter((id) => id !== squareId);
+                }
+                return [...prev, squareId];
+            });
+        }
     };
 
     const openLabelModal = () => {
@@ -248,26 +253,44 @@ const Home = () => {
 
 
 function TimelineGrid({ timelineData, zoomLevel, onSquareClick, selectedSquares }) {
+    const [touchStartPoint, setTouchStartPoint] = useState(null);
+    const [touchEndPoint, setTouchEndPoint] = useState(null);
 
-    let squaresPerRow;
-    switch (zoomLevel) {
-        case '1m':
-            squaresPerRow = 30;
-            break;
-        case '1y':
-            squaresPerRow = 52;
-            break;
-        case '10y':
-            squaresPerRow = 120;
-            break;
-        case '90y':
-        default:
-            squaresPerRow = 36;
-            break;
-    }
+    let squaresPerRow = 10; // Fixed at 10 squares per row for 80 total squares (8 rows)
 
-    const handleClick = (id) => {
-        onSquareClick(id);
+    const handleTouchStart = (e) => {
+        const touch = e.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const squareId = element?.getAttribute('data-square-id');
+        if (squareId) {
+            setTouchStartPoint(parseInt(squareId));
+            setTouchEndPoint(parseInt(squareId));
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        e.preventDefault(); // Prevent scrolling while selecting
+        const touch = e.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const squareId = element?.getAttribute('data-square-id');
+        if (squareId) {
+            setTouchEndPoint(parseInt(squareId));
+            // Select all squares between start and end points
+            if (touchStartPoint !== null) {
+                const start = Math.min(touchStartPoint, parseInt(squareId));
+                const end = Math.max(touchStartPoint, parseInt(squareId));
+                const selectedIds = Array.from(
+                    { length: end - start + 1 },
+                    (_, i) => start + i
+                );
+                onSquareClick(selectedIds);
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setTouchStartPoint(null);
+        setTouchEndPoint(null);
     };
 
     return (
@@ -276,17 +299,21 @@ function TimelineGrid({ timelineData, zoomLevel, onSquareClick, selectedSquares 
             style={{
                 gridTemplateColumns: `repeat(${squaresPerRow}, minmax(0, 1fr))`,
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
         >
-            {timelineData.map((square) => {
+            {timelineData.slice(0, 80).map((square) => {
                 const isSelected = selectedSquares.includes(square.id);
                 return (
                     <div
                         key={square.id}
-                        onClick={() => handleClick(square.id)}
-                        className={`w-5 h-5 md:w-6 md:h-6 border border-gray-700 cursor-pointer
-              ${square.color} 
-              ${isSelected ? 'border-white' : ''}
-            `}
+                        data-square-id={square.id}
+                        className={`w-8 h-8 md:w-10 md:h-10 border border-gray-700 cursor-pointer
+                            ${square.color} 
+                            ${isSelected ? 'border-white' : ''}
+                            ${touchStartPoint !== null ? 'touch-none' : 'touch-auto'}
+                        `}
                         title={square.label ? square.label : `Square #${square.id}`}
                     />
                 );

@@ -31,8 +31,8 @@ export default function BirthdayScreen({
         <div className="flex flex-col min-h-screen bg-black text-white">
             {/* Top Section */}
             <div className="p-4" style={{ flex: '0 0 auto' }}>
-                <h2 className="text-xl font-semibold mb-2">Birthday</h2>
-                <h2 className="text-xl mb-4">When did your life begin?</h2>
+                <h2 className="text-xl text-center font-semibold mb-2">Birthday</h2>
+                <h2 className="text-xl text-center mb-4">When did your life begin?</h2>
             </div>
 
             {/* Middle Section: Scrollable Picker */}
