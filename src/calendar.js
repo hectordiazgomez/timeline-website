@@ -48,8 +48,9 @@ export default function BirthdayScreen({
                                         <div
                                             key={month}
                                             onClick={() => setSelectedMonth(month)}
-                                            className={`p-2 cursor-pointer ${month === selectedMonth ? 'bg-gray-800' : ''
-                                                }`}
+                                            className={`p-2 cursor-pointer ${
+                                                month === selectedMonth ? 'bg-gray-800' : ''
+                                            }`}
                                         >
                                             {month}
                                         </div>
@@ -65,8 +66,9 @@ export default function BirthdayScreen({
                                         <div
                                             key={day}
                                             onClick={() => setSelectedDay(day)}
-                                            className={`p-2 cursor-pointer ${day === selectedDay ? 'bg-gray-800' : ''
-                                                }`}
+                                            className={`p-2 cursor-pointer ${
+                                                day === selectedDay ? 'bg-gray-800' : ''
+                                            }`}
                                         >
                                             {day}
                                         </div>
@@ -82,8 +84,9 @@ export default function BirthdayScreen({
                                         <div
                                             key={year}
                                             onClick={() => setSelectedYear(year)}
-                                            className={`p-2 cursor-pointer ${year === selectedYear ? 'bg-gray-800' : ''
-                                                }`}
+                                            className={`p-2 cursor-pointer ${
+                                                year === selectedYear ? 'bg-gray-800' : ''
+                                            }`}
                                         >
                                             {year}
                                         </div>
